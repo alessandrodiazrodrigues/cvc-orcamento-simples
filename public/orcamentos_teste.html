@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🧪 Orçamentos (versão simples)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root { --cvc: #005BBB; --cvc-dark:#003E80; }
+    body { background:#f6f8fb; }
+    .card { border:0; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.06); }
+    .brand { background: linear-gradient(135deg, var(--cvc), var(--cvc-dark)); color:#fff; border-radius:16px; }
+    .brand h1 { font-size:1.25rem; margin:0; }
+    .pill { font-size:.8rem; background:#fff2; padding:.25rem .5rem; border-radius:20px; }
+    .dropzone { border:2px dashed #ced4da; border-radius:12px; padding:16px; text-align:center; background:#fff; }
+    .output { white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <div class="brand p-4 mb-4 d-flex align-items-center justify-content-between">
+      <h1>🤖 CVC Itaqua • Orçamentos (simples)</h1>
+      <span class="pill">Auto | Texto = mini • Arquivo = Claude*</span>
+    </div>
+
+    <div class="card p-4 mb-3">
+      <form id="formOrcamento" class="row g-3">
+        <div class="col-12">
+          <label class="form-label fw-semibold">Observações e dados da viagem</label>
+          <textarea id="observacoes" class="form-control" rows="4" placeholder="Cole aqui informações do cliente, datas, preferências, trechos, etc."></textarea>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Destino (opcional)</label>
+          <input id="destino" type="text" class="form-control" placeholder="Ex.: Porto Seguro, Bariloche, Cruzeiro MSC">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Adultos</label>
+          <input id="adultos" type="number" min="1" value="2" class="form-control">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Crianças</label>
+          <input id="criancas" type="number" min="0" value="0" class="form-control">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-semibold">Colar texto adicional (opcional)</label>
+          <textarea id="textoColado" class="form-control" rows="3" placeholder="Cole aqui um orçamento de fornecedor, e-mail do cliente, etc."></textarea>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Enviar PDF (opcional)</label>
+          <div class="dropzone">
+            <input id="pdfInput" type="file" accept="application/pdf" class="form-control">
+            <small class="text-muted d-block mt-2">Se você anexar PDF, priorizamos modo complexo (Claude*).</small>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Enviar imagem (opcional)</label>
+          <div class="dropzone">
+            <input id="imgInput" type="file" accept="image/*" class="form-control">
+            <small class="text-muted d-block mt-2">PNG/JPG de orçamento, print, etc.</small>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-semibold">Instruções de formatação (opcional)</label>
+          <textarea id="instrucoes" class="form-control" rows="3" placeholder="Cole regras do seu manual (WhatsApp, bullets, cabeçalho, blocos, etc.)."></textarea>
+          <div class="form-text">Dica: se quiser usar seu manual, cole o conteúdo principal aqui. Links não são lidos pela IA no servidor.</div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Tipos de serviço</label>
+          <div class="d-flex flex-wrap gap-3">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="tipos" value="aereo" id="tAereo"><label class="form-check-label" for="tAereo">Aéreo</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="tipos" value="hotel" id="tHotel"><label class="form-check-label" for="tHotel">Hotel</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="tipos" value="pacote" id="tPacote"><label class="form-check-label" for="tPacote">Pacote</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="tipos" value="cruzeiro" id="tCruzeiro"><label class="form-check-label" for="tCruzeiro">Cruzeiro</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="tipos" value="transfer" id="tTransfer"><label class="form-check-label" for="tTransfer">Transfer</label></div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Preferência de modelo</label>
+          <select id="preferenciaModelo" class="form-select">
+            <option value="auto" selected>Automático (recomendado)</option>
+            <option value="mini">Forçar GPT-4o-mini (mais econômico)</option>
+            <option value="claude">Forçar Claude 3.5 Sonnet*</option>
+            <option value="gpt4o">Forçar GPT-4o</option>
+          </select>
+          <div class="form-text">*A troca efetiva depende do backend; esta tela já envia a preferência.</div>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+          <button id="btnGerar" class="btn btn-primary px-4" type="submit">Gerar orçamento</button>
+          <button id="btnLimpar" class="btn btn-outline-secondary" type="button">Limpar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card p-3">
+      <label class="form-label fw-semibold">Orçamento Principal (saída)</label>
+      <textarea id="saida" class="form-control output" rows="14" placeholder="A resposta formatada aparecerá aqui..."></textarea>
+    </div>
+
+    <p class="text-muted small mt-3">Dica: o servidor atual publica <code>/orcamentos.html</code>. Para testar esta versão, acesse <code>/orcamentos_teste.html</code> com o servidor rodando.</p>
+  </div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+
+    const toBase64 = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    function coletarFormData() {
+      const tipos = Array.from(document.querySelectorAll('input[name="tipos"]:checked')).map(i => i.value);
+      return {
+        observacoes: $('#observacoes').value || '',
+        textoColado: $('#textoColado').value || '',
+        destino: $('#destino').value || '',
+        adultos: $('#adultos').value || '2',
+        criancas: $('#criancas').value || '0',
+        tipos,
+      };
+    }
+
+    async function montarPayload() {
+      const formData = coletarFormData();
+      let temArquivo = false;
+      let imagemBase64 = null;
+      let pdfBase64 = null;
+
+      const pdfFile = $('#pdfInput').files[0];
+      const imgFile = $('#imgInput').files[0];
+
+      if (pdfFile) {
+        pdfBase64 = await toBase64(pdfFile);
+        temArquivo = true;
+      }
+      if (imgFile) {
+        imagemBase64 = await toBase64(imgFile);
+        temArquivo = true;
+      }
+
+      const preferencia = $('#preferenciaModelo').value;
+      let modelo = 'gpt-4o-mini';
+      let fallback = ['gpt-4o'];
+
+      if (preferencia === 'mini') {
+        modelo = 'gpt-4o-mini';
+        fallback = ['gpt-4o'];
+      } else if (preferencia === 'gpt4o') {
+        modelo = 'gpt-4o';
+        fallback = ['gpt-4o-mini'];
+      } else if (preferencia === 'claude') {
+        modelo = 'claude-3-5-sonnet-20240620';
+        fallback = ['gpt-4o'];
+      } else { 
+        if (temArquivo) {
+          modelo = 'claude-3-5-sonnet-20240620';
+          fallback = ['gpt-4o'];
+        } else {
+          modelo = 'gpt-4o-mini';
+          fallback = ['gpt-4o'];
+        }
+      }
+
+      const instr = ($('#instrucoes').value || '').trim();
+      if (instr) {
+        formData.observacoes = (formData.observacoes + "\n\n[INSTRUÇÕES DE FORMATAÇÃO]\n" + instr).trim();
+      }
+
+      return {
+        formData: {
+          ...formData,
+          imagemBase64,
+          pdfBase64
+        },
+        tipo: temArquivo && pdfBase64 ? 'pdf' : 'orcamento',
+        modeloPreferido: modelo,
+        fallbackPreferido: fallback
+      };
+    }
+
+    async function enviar(payload) {
+      const requestBody = {
+        formData: payload.formData,
+        tipo: payload.tipo || 'orcamento',
+        modelo: payload.modeloPreferido,
+        fallback: payload.fallbackPreferido
+      };
+
+      const resp = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+      const text = await resp.text();
+      if (!resp.ok) throw new Error(text);
+      try { return JSON.parse(text); } catch { return { result: text }; }
+    }
+
+    function extrairTexto(resultado) {
+      if (!resultado) return '';
+      if (resultado.success && resultado.result) return resultado.result;
+      if (resultado.orcamento) return resultado.orcamento;
+      if (resultado.choices?.[0]?.message?.content) return resultado.choices[0].message.content;
+      if (resultado.content?.[0]?.text) return resultado.content[0].text;
+      if (typeof resultado === 'string') return resultado;
+      return JSON.stringify(resultado, null, 2);
+    }
+
+    $('#formOrcamento').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('#btnGerar').disabled = true;
+      $('#saida').value = 'Gerando orçamento... aguarde ⏳';
+      try {
+        const payload = await montarPayload();
+        const resultado = await enviar(payload);
+        $('#saida').value = extrairTexto(resultado);
+      } catch (err) {
+        $('#saida').value = 'Erro ao gerar orçamento:\n' + (err.message || err);
+        console.error(err);
+      } finally {
+        $('#btnGerar').disabled = false;
+      }
+    });
+
+    $('#btnLimpar').addEventListener('click', () => {
+      $('#observacoes').value = '';
+      $('#textoColado').value = '';
+      $('#destino').value = '';
+      $('#adultos').value = '2';
+      $('#criancas').value = '0';
+      $('#pdfInput').value = '';
+      $('#imgInput').value = '';
+      $('#instrucoes').value = '';
+      $('#saida').value = '';
+      $('#preferenciaModelo').value = 'auto';
+    });
+  </script>
+</body>
+</html>
