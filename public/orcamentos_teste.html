@@ -15,6 +15,15 @@
     <label>Dados da Viagem:</label><br/>
     <textarea name="dadosViagem" rows="4" cols="50"></textarea><br/><br/>
 
+    <label>Destino (opcional):</label><br/>
+    <input name="destino" type="text"/><br/><br/>
+
+    <label>Adultos:</label>
+    <input name="adultos" type="number" value="2" min="1"/>
+    &nbsp;&nbsp;
+    <label>Crianças:</label>
+    <input name="criancas" type="number" value="0" min="0"/><br/><br/>
+
     <label>Enviar PDF:</label><br/>
     <input type="file" name="pdf" accept="application/pdf"/><br/><br/>
 
@@ -28,25 +37,48 @@
   <pre id="resultado"></pre>
 
   <script>
+    const toBase64 = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
     document.getElementById("orcamentoForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const form = e.target;
 
-      const formData = {
-        observacoes: form.observacoes.value,
-        dadosViagem: form.dadosViagem.value,
-        pdf: form.pdf.files.length > 0 ? true : false,
-        imagem: form.imagem.files.length > 0 ? true : false
+      const payload = {
+        formData: {
+          observacoes: form.observacoes.value || "",
+          textoColado: form.dadosViagem.value || "",
+          destino: form.destino?.value || "",
+          adultos: form.adultos?.value || "2",
+          criancas: form.criancas?.value || "0"
+        },
+        tipo: "orcamento"
       };
+
+      const pdfFile = form.pdf.files[0];
+      const imgFile = form.imagem.files[0];
+
+      if (pdfFile) {
+        payload.formData.pdfBase64 = await toBase64(pdfFile);
+        payload.tipo = "pdf";
+      }
+      if (imgFile) {
+        payload.formData.imagemBase64 = await toBase64(imgFile);
+      }
 
       const r = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formData })
+        body: JSON.stringify(payload)
       });
 
-      const data = await r.json();
-      document.getElementById("resultado").textContent = data.resposta || "Erro";
+      const data = await r.json().catch(() => ({}));
+      document.getElementById("resultado").textContent =
+        data.result || data.resposta || data.error || "Erro";
     });
   </script>
 </body>
